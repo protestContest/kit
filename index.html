@@ -5,13 +5,15 @@
     <meta charset='utf-8' />
     <meta name='viewport' content='width=device-width, initial-scale=1' />
     <link rel='stylesheet' href='style.css' />
-    <link rel='icon' href='compass.png' />
+    <link rel='icon' href='images/compass.png' />
   </head>
   <body>
     <canvas id='kitRoot'></canvas>
     <div class='toolbox'>
-      <button><img src='compass.png' /></button>
+      <button class='-active' data-js-select='.toolbox>button' data-kit-tool='compass'><img src='images/compass.png' /></button>
+      <button data-js-select='.toolbox>button' data-kit-tool='line'><img src='images/line.png' /></button>
     </div>
     <script src='kit.js'></script>
+    <script src='behaviors.js'></script>
   </body>
 </html>

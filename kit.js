@@ -18,8 +18,14 @@ class Kit {
     this.update = this.update.bind(this);
     this.clear = this.clear.bind(this);
     this.commit = this.commit.bind(this);
+    this.setTool = this.setTool.bind(this);
 
-    this.tool = new Compass(this.commit);
+    this.toolnames = {
+      compass: CompassTool,
+      line: LineTool
+    };
+
+    this.tool = new CompassTool(this.commit);
 
     this.resize();
     this.drawBackground();
@@ -65,7 +71,12 @@ class Kit {
     const shape = this.tool.getShape();
     shape.draw(this.bufferContext);
     this.shapes.push(shape);
+  }
 
+  setTool(name) {
+    if (this.toolnames[name]) {
+      this.tool = new this.toolnames[name](this.commit);
+    }
   }
 
   drawBackground() {
@@ -103,7 +114,7 @@ class Tool {
   }
 }
 
-class Compass extends Tool {
+class CompassTool extends Tool {
   constructor(done) {
     super(done);
     this.onMouseDown = this.onMouseDown.bind(this);
@@ -190,6 +201,49 @@ class Compass extends Tool {
   }
 }
 
+class LineTool extends Tool {
+  constructor(done) {
+    super(done);
+    this.onMouseDown = this.onMouseDown.bind(this);
+    this.onMouseMove = this.onMouseMove.bind(this);
+    this.onMouseUp = this.onMouseUp.bind(this);
+  }
+
+  onMouseDown(event) {
+    this.mode = 'line';
+    this.params.origin = { x: event.x, y: event.y };
+    this.params.dest = { x: event.x, y: event.y };
+  }
+
+  onMouseMove(event) {
+    if (this.mode === 'line') {
+      this.params.dest = { x: event.x, y: event.y };
+    }
+  }
+
+  onMouseUp(event) {
+    if (this.mode === 'line') {
+      this.mode = 'initial';
+      this.params.dest = { x: event.x, y: event.y };
+      this.done();
+    }
+  }
+
+  getShape() {
+    return new Line(this.params);
+  }
+
+  draw(context) {
+    if (this.mode === 'line') {
+      context.strokeStyle = 'black';
+      context.beginPath();
+      context.moveTo(this.params.origin.x, this.params.origin.y);
+      context.lineTo(this.params.dest.x, this.params.dest.y);
+      context.stroke();
+    }
+  }
+}
+
 class Shape {
   constructor(params) {
     this.params = params || {};
@@ -205,6 +259,16 @@ class Arc extends Shape {
       this.params.radius,
       this.params.startAngle, this.params.endAngle);
 
+    context.stroke();
+  }
+}
+
+class Line extends Shape {
+  draw(context) {
+    context.strokeStyle = 'black';
+    context.beginPath();
+    context.moveTo(this.params.origin.x, this.params.origin.y);
+    context.lineTo(this.params.dest.x, this.params.dest.y);
     context.stroke();
   }
 }
