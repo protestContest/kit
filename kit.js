@@ -120,6 +120,10 @@ class CompassTool extends Tool {
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseMove = this.onMouseMove.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
+
+    this.params = {
+      origin: { x: 0, y: 0}
+    };
   }
 
   onMouseDown(event) {
@@ -127,31 +131,38 @@ class CompassTool extends Tool {
       this.mode = 'radius';
       this.params.origin = { x: event.x, y: event.y };
       this.params.radiusDest = { x: event.x, y: event.y };
+      this.params.radius = 0;
+    } if (this.mode === 'arc') {
+      this.mode = 'draw';
+      this.params.startAngle = Math.atan2(this.params.radiusDest.y - this.params.origin.y, this.params.radiusDest.x - this.params.origin.x);
+      this.params.angleDest = { x: this.params.radiusDest.x, y: this.params.radiusDest.y };
+      this.params.endAngle = this.params.startAngle;
     }
   }
 
   onMouseMove(event) {
-    if (this.mode === 'radius') {
+    if (this.mode === 'initial') {
       this.params.origin = { x: event.x, y: event.y };
+    } else if (this.mode === 'radius') {
+      this.params.radiusDest = { x: event.x, y: event.y };
       this.params.radius = Math.sqrt(Math.pow(this.params.radiusDest.x - this.params.origin.x, 2) + Math.pow(this.params.radiusDest.y - this.params.origin.y, 2));
     } else if (this.mode === 'arc') {
-      this.params.endAngle = Math.atan2(event.y - this.params.origin.y, event.x - this.params.origin.x);
-      this.params.angleDest = {
-        x: this.params.origin.x + this.params.radius * Math.cos(this.params.endAngle),
-        y: this.params.origin.y + this.params.radius * Math.sin(this.params.endAngle)
+      const angle = Math.atan2(event.y - this.params.origin.y, event.x - this.params.origin.x);
+      this.params.radiusDest = {
+        x: this.params.origin.x + this.params.radius * Math.cos(angle),
+        y: this.params.origin.y + this.params.radius * Math.sin(angle)
       };
+    } else if (this.mode === 'draw') {
+      this.params.endAngle = Math.atan2(event.y - this.params.origin.y, event.x - this.params.origin.x);
     }
   }
 
   onMouseUp(event) {
     if (this.mode === 'radius') {
       this.mode = 'arc';
+      this.params.radiusDest = { x: event.x, y: event.y };
       this.params.radius = Math.sqrt(Math.pow(this.params.radiusDest.x - this.params.origin.x, 2) + Math.pow(this.params.radiusDest.y - this.params.origin.y, 2));
-      this.params.startAngle = Math.atan2(this.params.radiusDest.y - this.params.origin.y, this.params.radiusDest.x - this.params.origin.x);
-
-      this.params.angleDest = { x: this.params.radiusDest.x, y: this.params.radiusDest.y };
-      this.params.endAngle = this.params.startAngle;
-    } else if (this.mode === 'arc') {
+    } else if (this.mode === 'draw') {
       this.mode = 'initial';
       this.done();
     }
@@ -162,7 +173,10 @@ class CompassTool extends Tool {
   }
 
   draw(context) {
-    if (this.mode === 'radius') {
+    if (this.mode === 'initial') {
+      context.fillStyle = 'black';
+      context.fillText(this.params.origin.x + ', ' + this.params.origin.y, this.params.origin.x, this.params.origin.y);
+    } else if (this.mode === 'radius') {
       context.strokeStyle = 'black';
       context.fillStyle = 'black';
       context.beginPath();
@@ -178,6 +192,13 @@ class CompassTool extends Tool {
       context.fillStyle = 'black';
       context.fillText(Math.round(dist), this.params.origin.x, this.params.origin.y);
     } else if (this.mode === 'arc') {
+      context.beginPath();
+      context.strokeStyle = '#ddd';
+      context.arc(this.params.origin.x, this.params.origin.y, this.params.radius, 0, 2*Math.PI);
+      context.moveTo(this.params.origin.x, this.params.origin.y);
+      context.lineTo(this.params.radiusDest.x, this.params.radiusDest.y);
+      context.stroke();
+    } else if (this.mode === 'draw') {
       const startDeg = this.params.startAngle * 180 / Math.PI;
       const endDeg = this.params.endAngle * 180 / Math.PI;
 
