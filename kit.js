@@ -22,7 +22,8 @@ class Kit {
 
     this.toolnames = {
       compass: CompassTool,
-      line: LineTool
+      line: LineTool,
+      eraser: EraserTool
     };
 
     this.tool = new CompassTool(this.commit);
@@ -75,7 +76,7 @@ class Kit {
 
   setTool(name) {
     if (this.toolnames[name]) {
-      this.tool = new this.toolnames[name](this.commit);
+      this.tool = new this.toolnames[name](this.commit, this.bufferContext);
     }
   }
 
@@ -107,10 +108,11 @@ class Kit {
 }
 
 class Tool {
-  constructor(done) {
+  constructor(done, buffer) {
     this.params = {};
     this.mode = 'initial';
     this.done = done;
+    this._buffer = buffer;
   }
 }
 
@@ -262,6 +264,36 @@ class LineTool extends Tool {
       context.lineTo(this.params.dest.x, this.params.dest.y);
       context.stroke();
     }
+  }
+}
+
+class EraserTool extends Tool {
+  constructor(done, buffer) {
+    super(done, buffer);
+    this.params.origin = { x: 0, y: 0 };
+    this.params.active = false;
+  }
+
+  onMouseDown(event) {
+    this.params.active = true;
+  }
+
+  onMouseMove(event) {
+    this.params.origin = { x: event.x, y: event.y };
+    if (this.params.active) {
+      this._buffer.clearRect(this.params.origin.x - 4, this.params.origin.y - 4, 8, 8);
+    }
+  }
+
+  onMouseUp(event) {
+    this.params.active = false;
+  }
+
+  draw(context) {
+    context.strokeStyle = 'black';
+    context.fillStyle = 'white';
+    context.fillRect(this.params.origin.x - 4, this.params.origin.y - 4, 8, 8);
+    context.strokeRect(this.params.origin.x - 4, this.params.origin.y - 4, 8, 8);
   }
 }
 
